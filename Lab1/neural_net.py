@@ -80,13 +80,10 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE*****
         
-        fc1 =  np.dot(X, W1) + b1
-        fc1_relu = np.maximum(0, fc1)
-
-        fc2 = np.dot(fc1_relu, W2) + b2
-
-        scores = np.dot(fc1_relu, W2) + b2
-
+        fc1 =  np.dot(X, W1) + b1 
+        fc1_relu = np.maximum(0, fc1) # ReLU activation function
+        # fc2 = np.dot(fc1_relu, W2) + b2
+        scores = np.dot(fc1_relu, W2) + b2  # shape (N, C)
         pass
         
         # *****END OF YOUR CODE*****
@@ -182,6 +179,8 @@ class TwoLayerNet(object):
         train_acc_history = []
         val_acc_history = []
 
+        nan_counter = 0 # counter for cosecutive values of NaN in the loss
+
         for it in range(num_iters):
             X_batch = None
             y_batch = None
@@ -201,6 +200,15 @@ class TwoLayerNet(object):
             # Compute loss and gradients using the current minibatch
             loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
             loss_history.append(loss)
+
+            # Check for consecutive NaN losses
+            if np.isnan(loss):
+                nan_counter += 1
+                if nan_counter >= 3:
+                    print('Loss is NaN for the last few iterations. Stopping training with this learning rate.')
+                    break
+            else:
+                nan_counter = 0  # Reset counter if loss is not NaN
 
             #########################################################################
             # TODO: Use the gradients in the grads dictionary to update the         #

@@ -73,6 +73,7 @@ class TwoLayerNet(object):
         N, D = X.shape # N = X.shape[0], D = X.shape[1]
 
         # Compute the forward pass
+        scores = None
         #############################################################################
         # TODO: Perform the forward pass, computing the class scores for the input. #
         # Store the result in the scores variable, which should be an array of      #
@@ -82,7 +83,6 @@ class TwoLayerNet(object):
         
         fc1 =  np.dot(X, W1) + b1 
         fc1_relu = np.maximum(0, fc1) # ReLU activation function
-        # fc2 = np.dot(fc1_relu, W2) + b2
         scores = np.dot(fc1_relu, W2) + b2  # shape (N, C)
         pass
         
@@ -103,11 +103,14 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE*****
 
-        scores -= np.max(scores) # for numerical stability
-        prob = np.exp(scores) / np.sum(np.exp(scores), axis=1, keepdims=True)
-        correct_probs = prob[np.arange(N), y]
-        data_loss = np.sum(-np.log(correct_probs)) / N
-        reg_loss = 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+        # scores -= np.max(scores) # for numerical stability
+        exp_scores = np.exp(scores - np.max(scores, axis=1, keepdims=True)) # for numerical stability
+        prob = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+        # correct_probs = prob[np.arange(N), y]
+        correct_log_probs = -np.log(prob[np.arange(N), y])
+        data_loss = np.mean(correct_log_probs)
+
+        reg_loss = 0.5 * reg * (np.sum(W1 ** 2) + np.sum(W2 ** 2)) # L2 regularization
         loss = data_loss + reg_loss
         pass
         # *****END OF YOUR CODE*****
@@ -134,6 +137,7 @@ class TwoLayerNet(object):
 
         # Backpropagate through the ReLU activation function
         d_fc1_relu = np.dot(d_scores, W2.T)
+        d_fc1_relu[fc1_relu <= 0] = 0 
         d_fc1 = d_fc1_relu * (fc1 > 0)
 
         # Backpropagate through the first fully connected layer
